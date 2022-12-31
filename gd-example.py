@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from utils import sse
+
 
 def generator(x:float, params:np.ndarray=np.array([3., 2., .7, .5])) -> float:
 	return params[0]*np.cos(params[1]*x + params[2]) + params[3]
@@ -18,11 +20,26 @@ def generate_data(n:int, noise_mag:float=0.01, params:np.ndarray=np.array([3., 2
 	y = generator(X, params=params) + noise_mag*np.random.randn(n)
 	return X, y
 
+def objective(params:np.ndarray, X:np.ndarray, y:np.ndarray) -> float:
+	preds = generator(X, params=params)
+	return sse(preds, y)
+
+def gradient(params:np.ndarray, X:np.ndarray):
+	grad = np.array(
+		[
+		2*np.sum((params[0]*np.cos(params[1]*X + params[2]) + params[3] - y) * (np.cos(params[1]*X + params[2]))),
+		2*np.sum((params[0]*np.cos(params[1]*X + params[2]) + params[3] - y) * (-np.sin(params[1]*X + params[2])) * X),
+		2*np.sum((params[0]*np.cos(params[1]*X + params[2]) + params[3] - y) * (-np.sin(params[1]*X + params[2]))),
+		2*np.sum(params[0]*np.cos(params[1]*X + params[2]) + params[3] - y)
+		]
+	)
+	return grad
+
 
 if __name__ == '__main__':
 	np.random.seed(0)
 	
-	#%% Generate data and plot the generator and the data
+	#%% Generate data and plot generator and data
 	X_grid = np.linspace(-np.pi/2, np.pi/2, 200)
 	X, y = generate_data(20, noise_mag=.1)
 
@@ -32,4 +49,9 @@ if __name__ == '__main__':
 	ax.set(xlabel='x', ylabel='y', title='Generator and data for regression.')
 	ax.grid()
 	ax.legend()
-	plt.show()
+	# plt.show()
+
+	#%% Test the objective function and the gradient function
+	params_test = np.random.uniform(low=0., high=5., size=(4,))
+	print(f"Test objective value: {objective(params_test, X, y)}")
+	print(f"Test gradient value: {gradient(params_test, X)}")
