@@ -1,3 +1,4 @@
+from functools import partial
 import os
 import sys
 from typing import Tuple
@@ -9,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils import sse
+from utils import sse, gd_optimise
 
 
 def generator(x:float, params:np.ndarray=np.array([3., 2., .7, .5])) -> float:
@@ -53,5 +54,40 @@ if __name__ == '__main__':
 
 	#%% Test the objective function and the gradient function
 	params_test = np.random.uniform(low=0., high=5., size=(4,))
-	print(f"Test objective value: {objective(params_test, X, y)}")
-	print(f"Test gradient value: {gradient(params_test, X)}")
+	# print(f"Test objective value: {objective(params_test, X, y)}")
+	# print(f"Test gradient value: {gradient(params_test, X)}")
+
+	#%% Define the partial objective and gradient functions and instantiate some initial parameters
+	f = partial(objective, X=X, y=y)
+	df = partial(gradient, X=X)
+
+	initial_params = [
+		np.array([3., 2., .7, .5]) - 1.*np.random.randn(4),
+		np.array([3., 2., .7, .5]) - .1*np.random.randn(4),
+		np.array([3., 2., .7, .5]) - .01*np.random.randn(4),
+		np.array([3., 2., .7, .5]) - .001*np.random.randn(4),
+	]
+
+	#%% Run the optimisation for all initial parameters
+	histories = []
+
+	fig, ax = plt.subplots()
+	ax.plot(X_grid, generator(X_grid), 'b-', label='generator')
+	ax.scatter(X, y, marker='o', facecolor='k', edgecolor='k', alpha=.7, label='data')
+
+	for p0 in initial_params:
+		p_end, hist = gd_optimise(p0, f, df, eta=.01)
+		histories.append(hist)
+		ax.plot(X_grid, generator(X_grid, params=p_end), label=f'p0={str(p0)}')
+
+	ax.set(xlabel='x', ylabel='y', title='Original curve and different regressions.')
+	ax.grid()
+	ax.legend()
+	# plt.show()
+
+	#%% Plot the loss histories
+	fig, ax = plt.subplots()
+	for hist in histories:
+		ax.plot(hist)
+	ax.set(xlabel='iterations', ylabel='SSE', title='Sum of squared errors during optimization.')
+	plt.show()
