@@ -1,14 +1,4 @@
-# Simple Project
+# Nonlinear regression
 ## Files
-- `file_1.py`
-
-## To start working
-1. Create the working directories
-`mkdir -p data/data_raw results/`
-2. Create the virtual environment
-`python3 -m venv --upgrade-deps localenv`
-3. Install the necessary packages
-```
-source ./localenv/bin/activate
-pip install -r requirements.txt
-```
+- `gd-example.py`: basic use of gradient descent. Data are generated with a 1D function and some Gaussian noise. Later, the parameters are learned with a gradient descent algorithm. The experiment is repeated for different initializations.
+- `utils.py`: small library of functions shared between scripts.
