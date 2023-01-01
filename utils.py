@@ -36,3 +36,8 @@ def qr_solve(A:np.ndarray, b:np.ndarray) -> np.ndarray:
     y = Q.T @ b
     x = np.linalg.solve(R, y)
     return x
+
+def compute_array_statistics(arr:np.ndarray, axis=0):
+    m = arr.mean(axis=axis)
+    s = arr.std(axis=axis)
+    return m, s
