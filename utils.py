@@ -25,3 +25,8 @@ def gd_optimise(params0:np.ndarray, fun:Callable, grad_fun:Callable, eta:float=1
         params_old = params_new
     print(f"Optimisation completed. Iterations = {it+1:d}. Final loss value = {fun_hist[-1]:4f}")
     return params_new, fun_hist
+
+def svd_solve(A:np.ndarray, b:np.ndarray) -> np.ndarray:
+    U, s, VT = np.linalg.svd(A, full_matrices=False)
+    pseudo_inv = VT.T @ np.diag(1/s) @ U.T
+    return pseudo_inv @ b
