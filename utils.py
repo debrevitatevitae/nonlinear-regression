@@ -30,3 +30,9 @@ def svd_solve(A:np.ndarray, b:np.ndarray) -> np.ndarray:
     U, s, VT = np.linalg.svd(A, full_matrices=False)
     pseudo_inv = VT.T @ np.diag(1/s) @ U.T
     return pseudo_inv @ b
+
+def qr_solve(A:np.ndarray, b:np.ndarray) -> np.ndarray:
+    Q, R = np.linalg.qr(A, mode='reduced')
+    y = Q.T @ b
+    x = np.linalg.solve(R, y)
+    return x
