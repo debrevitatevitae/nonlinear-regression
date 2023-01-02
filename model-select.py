@@ -32,11 +32,11 @@ def regress_multi_methods(A:np.ndarray, b:np.ndarray) -> Tuple[np.ndarray, np.nd
 	# qr decomposition solution
 	x_qr = qr_solve(A, b)
 	# lasso with l1 penalty = 1.
-	lasso_1 = linear_model.Lasso(alpha=1.)
+	lasso_1 = linear_model.Lasso(alpha=1., fit_intercept=False)
 	lasso_1.fit(A, b)
 	x_lasso_1 = lasso_1.coef_
 	# lasso with l1 penalty = .5
-	lasso_2 = linear_model.Lasso(alpha=.5)
+	lasso_2 = linear_model.Lasso(alpha=.5, fit_intercept=False)
 	lasso_2.fit(A, b)
 	x_lasso_2 = lasso_2.coef_
 	# ridge regression
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 	plt.show()
 
 	#%% Generate the polynomial data matrix
-	A = generate_polynomial_feature_matrix(X, p=20)
+	A = generate_polynomial_feature_matrix(X, p=5)
 	print(A)
 	# sys.exit()
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 	coeffs_huber = []
 
 	for _ in range(100):
-		b = y + .5*np.random.randn(100)
+		b = y + .1*np.random.randn(100)
 		c_ls, c_qr, c_lasso_1, c_lasso_2, c_ridge, c_huber = regress_multi_methods(A, b)
 		coeffs_ls.append(c_ls)
 		coeffs_qr.append(c_qr)
@@ -107,17 +107,17 @@ if __name__ == '__main__':
 
 	#%% Plot mean and standard deviations on a bar plot for each method
 	fig, axs = plt.subplots(2, 3)
-	axs[0, 0].errorbar(np.arange(20), mu_ls, yerr=sig_ls, fmt='.', ecolor='red', capsize=3., capthick=1.)
+	axs[0, 0].errorbar(np.arange(5), mu_ls, yerr=sig_ls, fmt='.', ecolor='red', capsize=3., capthick=1.)
 	axs[0, 0].set_title('LS')
-	axs[0, 1].errorbar(np.arange(20), mu_qr, yerr=sig_qr, fmt='.', ecolor='red', capsize=3., capthick=1.)
+	axs[0, 1].errorbar(np.arange(5), mu_qr, yerr=sig_qr, fmt='.', ecolor='red', capsize=3., capthick=1.)
 	axs[0, 1].set_title('QR')
-	axs[0, 2].errorbar(np.arange(20), mu_lasso_1, yerr=sig_lasso_1, fmt='.', ecolor='red', capsize=3., capthick=1.)
+	axs[0, 2].errorbar(np.arange(5), mu_lasso_1, yerr=sig_lasso_1, fmt='.', ecolor='red', capsize=3., capthick=1.)
 	axs[0, 2].set_title('Lasso, alpha=1')
-	axs[1, 0].errorbar(np.arange(20), mu_lasso_2, yerr=sig_lasso_2, fmt='.', ecolor='red', capsize=3., capthick=1.)
+	axs[1, 0].errorbar(np.arange(5), mu_lasso_2, yerr=sig_lasso_2, fmt='.', ecolor='red', capsize=3., capthick=1.)
 	axs[1, 0].set_title('Lasso, alpha=0.5')
-	axs[1, 1].errorbar(np.arange(20), mu_ridge, yerr=sig_ridge, fmt='.', ecolor='red', capsize=3., capthick=1.)
+	axs[1, 1].errorbar(np.arange(5), mu_ridge, yerr=sig_ridge, fmt='.', ecolor='red', capsize=3., capthick=1.)
 	axs[1, 1].set_title('Ridge')
-	axs[1, 2].errorbar(np.arange(20), mu_huber, yerr=sig_huber, fmt='.', ecolor='red', capsize=3., capthick=1.)
+	axs[1, 2].errorbar(np.arange(5), mu_huber, yerr=sig_huber, fmt='.', ecolor='red', capsize=3., capthick=1.)
 	axs[1, 2].set_title('Huber')
 	fig.suptitle('Coefficients for different solvers')
 	plt.show()
