@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn import linear_model
 
 from utils import svd_solve, compute_array_statistics
@@ -37,11 +38,15 @@ if __name__ == '__main__':
 	n_train = len(y_train)
 	max_degree = 20
 	A = generate_polynomial_feature_matrix(X_train, p=max_degree)
+	
+	#%% Scale features
+	scaler = StandardScaler()
+	A = scaler.fit_transform(A)
 
 	#%% (Test) Solve a linear system with the three methods we'll be using
 	x_lstsq = np.linalg.lstsq(A, y_train, rcond=None)[0]
 	x_pinv = svd_solve(A, y_train)
-	lasso = linear_model.Lasso(alpha=.1, fit_intercept=False)
+	lasso = linear_model.Lasso(alpha=.1, fit_intercept=True, max_iter=1000)
 	lasso.fit(A, y_train)
 	x_lasso = lasso.coef_
 
@@ -50,10 +55,12 @@ if __name__ == '__main__':
 	axs[0].bar(range(max_degree), x_lstsq)
 	axs[1].bar(range(max_degree), x_pinv)
 	axs[2].bar(range(max_degree), x_lasso)
-	# plt.show()
+	plt.show(block=False)
+	plt.close(fig)
+	# sys.exit()
 
 	#%% Train with different methods for different folds
-	Ks = [2, 10, 20]
+	Ks = [2, 10, 100]
 	
 	fig_coefs, axs_coefs = plt.subplots(3, 3)
 	fig_err, axs_err = plt.subplots(1, 3)
@@ -73,6 +80,7 @@ if __name__ == '__main__':
 			y_i = y_train[idxs]
 			# Genrate the feature matrix
 			A_i = generate_polynomial_feature_matrix(X_i, p=max_degree)
+			A_i = scaler.transform(A_i)
 			# Perform regression with different methods
 			c_lstsq = np.linalg.lstsq(A_i, y_i, rcond=None)[0]
 			c_pinv = svd_solve(A_i, y_i)
@@ -106,4 +114,46 @@ if __name__ == '__main__':
 
 		axs_err[j].bar(range(3), [e_ave_lstsq, e_ave_pinv, e_ave_lasso])
 
+	plt.show(block=False)
+
+	#%% Compute the test errors for K=100 and compare against the averages of the 100 train errors
+	A_test = generate_polynomial_feature_matrix(X_test, p=max_degree)
+	A_test = scaler.transform(A_test)
+	e_test_lstsq = np.linalg.norm(A_test @ c_ave_lstsq - y_test) / np.linalg.norm(y_test)
+	e_test_pinv = np.linalg.norm(A_test @ c_ave_pinv - y_test) / np.linalg.norm(y_test)
+	e_test_lasso = np.linalg.norm(A_test @ c_ave_lasso - y_test) / np.linalg.norm(y_test)
+
+	fig, axs = plt.subplots(1, 3)
+	axs[0].bar(range(3), [e_ave_lstsq, e_ave_pinv, e_ave_lasso])
+	axs[1].bar(range(3), [e_test_lstsq, e_test_pinv, e_test_lasso])
+	axs[2].bar(range(3), [e_test_lstsq, e_test_pinv, e_test_lasso])
+	axs[2].set(ylim = [0, 10])
+	plt.show(block=False)
+
+	#%% Add thresholding of the coefficients and replot training and test error
+	# This time, the training error is computed over the entire dataset rather than being averaged
+	# over the k-folds
+	th_lstsq = .1 * np.max(np.abs(c_ave_lstsq))
+	th_pinv = .1 * np.max(np.abs(c_ave_pinv))
+	th_lasso = .1 * np.max(np.abs(c_ave_lasso))
+
+	c_th_lstsq = np.where(np.abs(c_ave_lstsq) > th_lstsq, c_ave_lstsq, np.zeros(max_degree))
+	c_th_pinv = np.where(np.abs(c_ave_pinv) > th_pinv, c_ave_pinv, np.zeros(max_degree))
+	c_th_lasso = np.where(np.abs(c_ave_lasso) > th_lasso, c_ave_lasso, np.zeros(max_degree))
+
+	print(c_th_lasso)
+
+	e_th_train_lstsq = np.linalg.norm(A @ c_th_lstsq - y_train) / np.linalg.norm(y_train)
+	e_th_train_pinv = np.linalg.norm(A @ c_th_pinv - y_train) / np.linalg.norm(y_train)
+	e_th_train_lasso = np.linalg.norm(A @ c_th_lasso - y_train) / np.linalg.norm(y_train)
+
+	e_th_test_lstsq = np.linalg.norm(A_test @ c_th_lstsq - y_test) / np.linalg.norm(y_test)
+	e_th_test_pinv = np.linalg.norm(A_test @ c_th_pinv - y_test) / np.linalg.norm(y_test)
+	e_th_test_lasso = np.linalg.norm(A_test @ c_th_lasso - y_test) / np.linalg.norm(y_test)
+
+	fig, axs = plt.subplots(1, 3)
+	axs[0].bar(range(3), [e_th_train_lstsq, e_th_train_pinv, e_th_train_lasso])
+	axs[1].bar(range(3), [e_th_test_lstsq, e_th_test_pinv, e_th_test_lasso])
+	axs[2].bar(range(3), [e_th_test_lstsq, e_th_test_pinv, e_th_test_lasso])
+	axs[2].set(ylim = [0, 10])
 	plt.show()
